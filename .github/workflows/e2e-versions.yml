@@ -49,15 +49,35 @@ jobs:
             version: 20
              # Add Semeru configuration here
           - distribution: 'semeru'
-            os: windows-latest
-            version: ['21', '11', '17']
-          - distribution: 'semeru'
-            os: ubuntu-latest
-            version: ['21', '11', '17']
+            os: macos-latest
+            architecture: aarch64
+            version: '21'
           - distribution: 'semeru'
             os: macos-latest
             architecture: aarch64
-            version: ['21', '11', '17']
+            version: '11'
+          - distribution: 'semeru'
+            os: macos-latest
+            architecture: aarch64
+            version: '17'
+          - distribution: 'semeru'
+            os: windows-latest
+            version: '21'
+          - distribution: 'semeru'
+            os: windows-latest
+            version: '11'
+          - distribution: 'semeru'
+            os: windows-latest
+            version: '17'
+          - distribution: 'semeru'
+            os: ubuntu-latest
+            version: '21'
+          - distribution: 'semeru'
+            os: ubuntu-latest
+            version: '11'
+          - distribution: 'semeru'
+            os: ubuntu-latest
+            version: '17'
 
     steps:
       - name: Checkout
