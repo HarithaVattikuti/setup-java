@@ -50,15 +50,15 @@ jobs:
              # Add Semeru configuration here
           - distribution: 'semeru'
             os: macos-latest
-            architecture: aarch64
+            architecture: 'aarch64'
             version: '21'
           - distribution: 'semeru'
             os: macos-latest
-            architecture: aarch64
+            architecture: 'aarch64'
             version: '11'
           - distribution: 'semeru'
             os: macos-latest
-            architecture: aarch64
+            architecture: 'aarch64'
             version: '17'
           - distribution: 'semeru'
             os: windows-latest
