@@ -171,7 +171,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [macos-13, windows-latest, ubuntu-latest]
         version: ['17-ea', '15.0.0-ea.14']
     steps:
       - name: Checkout
@@ -215,7 +215,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [macos-13, windows-latest, ubuntu-latest]
         distribution: ['temurin', 'zulu', 'liberica', 'semeru']
         java-package: ['jre']
         version: ['17.0']
@@ -238,7 +238,7 @@ jobs:
             os: ubuntu-latest
           - distribution: 'corretto'
             java-package: jre
-            version: '21'
+            version: '8'
             os: windows-latest
     steps:
       - name: Checkout
