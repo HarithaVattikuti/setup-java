@@ -10,6 +10,7 @@ on:
   pull_request:
     paths-ignore:
       - '**.md'
+  workflow_dispatch:
 
 defaults:
   run:
@@ -21,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [macos-13, windows-latest, ubuntu-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -46,7 +47,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [macos-13, windows-latest, ubuntu-latest]
     needs: gradle-save
     steps:
       - name: Checkout
@@ -70,7 +71,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [macos-13, windows-latest, ubuntu-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -93,7 +94,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [macos-13, windows-latest, ubuntu-latest]
     needs: maven-save
     steps:
       - name: Checkout
@@ -121,7 +122,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [macos-13, windows-latest, ubuntu-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -136,7 +137,7 @@ jobs:
         run: sbt update
 
       - name: Check files to cache on macos-latest
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-13'
         run: |
           if [ ! -d ~/Library/Caches/Coursier ]; then
             echo "::error::The ~/Library/Caches/Coursier directory does not exist unexpectedly"
@@ -168,7 +169,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [macos-13, windows-latest, ubuntu-latest]
     needs: sbt-save
     steps:
       - name: Checkout
@@ -182,7 +183,7 @@ jobs:
           cache: sbt
 
       - name: Confirm that ~/Library/Caches/Coursier directory has been made
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'macos-13'
         run: |
           if [ ! -d ~/Library/Caches/Coursier ]; then
             echo "::error::The ~/Library/Caches/Coursier directory does not exist unexpectedly"
