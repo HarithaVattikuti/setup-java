@@ -73,7 +73,7 @@ jobs:
         distribution: ['temurin', 'zulu', 'liberica']
         version:
           - '11.0'
-          - '8.0.302'
+          - '21.0'
           - '17.0.7+7'
         include:
           - distribution: oracle
@@ -222,15 +222,15 @@ jobs:
         include:
           - distribution: 'zulu'
             java-package: jre+fx
-            version: '8'
+            version: '21'
             os: ubuntu-latest
           - distribution: 'zulu'
             java-package: jdk+fx
-            version: '8.0.242'
+            version: '21.0'
             os: ubuntu-latest
           - distribution: 'liberica'
             java-package: jdk+fx
-            version: '8'
+            version: '21'
             os: ubuntu-latest
           - distribution: 'liberica'
             java-package: jre+fx
@@ -238,7 +238,7 @@ jobs:
             os: ubuntu-latest
           - distribution: 'corretto'
             java-package: jre
-            version: '8'
+            version: '21'
             os: windows-latest
     steps:
       - name: Checkout
@@ -294,10 +294,10 @@ jobs:
         uses: actions/checkout@v4
       - name: Create .java-version file
         shell: bash
-        run: echo "8" > .java-version
+        run: echo "17" > .java-version
       - name: Create .tool-versions file
         shell: bash
-        run: echo "java 8" > .tool-versions
+        run: echo "java 17" > .tool-versions
       - name: setup-java
         uses: ./
         id: setup-java
