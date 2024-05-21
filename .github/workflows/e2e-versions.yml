@@ -37,10 +37,10 @@ jobs:
           - distribution: microsoft
             version: 8
           - distribution: dragonwell
-            os: macos-latest
+            os: macos-13
         include:
           - distribution: oracle
-            os: macos-latest
+            os: macos-13
             version: 17
           - distribution: oracle
             os: windows-latest
