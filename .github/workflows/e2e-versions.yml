@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        os: [macos-13, windows-latest, ubuntu-latest]
         distribution: [
             'temurin',
             'adopt',
@@ -28,6 +28,7 @@ jobs:
             'zulu',
             'liberica',
             'microsoft',
+            'semeru',
             'corretto',
             'dragonwell'
           ] # internally 'adopt-hotspot' is the same as 'adopt'
@@ -46,38 +47,7 @@ jobs:
             version: 20
           - distribution: oracle
             os: ubuntu-latest
-            version: 20
-             # Add Semeru configuration here
-          - distribution: 'semeru'
-            os: macos-latest
-            architecture: 'aarch64'
-            version: '21'
-          - distribution: 'semeru'
-            os: macos-latest
-            architecture: 'aarch64'
-            version: '11'
-          - distribution: 'semeru'
-            os: macos-latest
-            architecture: 'aarch64'
-            version: '17'
-          - distribution: 'semeru'
-            os: windows-latest
-            version: '21'
-          - distribution: 'semeru'
-            os: windows-latest
-            version: '11'
-          - distribution: 'semeru'
-            os: windows-latest
-            version: '17'
-          - distribution: 'semeru'
-            os: ubuntu-latest
-            version: '21'
-          - distribution: 'semeru'
-            os: ubuntu-latest
-            version: '11'
-          - distribution: 'semeru'
-            os: ubuntu-latest
-            version: '17'
+            version: 20      
 
     steps:
       - name: Checkout
