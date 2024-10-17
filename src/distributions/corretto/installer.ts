@@ -43,6 +43,10 @@ export class CorrettoDistribution extends JavaBase {
     const archivePath = path.join(extractedJavaPath, archiveName);
     const version = this.getToolcacheVersionName(javaRelease.version);
 
+    core.debug(`Extracted Java archive path: ${archivePath}`);
+    core.debug(`Extracted Java this.toolcacheFolderName : ${this.toolcacheFolderName}`);
+    core.debug(`Extracted Java version: ${version}`);
+    core.debug(`Extracted Java architecture: ${this.architecture}`);
     const javaPath = await tc.cacheDir(
       archivePath,
       this.toolcacheFolderName,
@@ -50,6 +54,13 @@ export class CorrettoDistribution extends JavaBase {
       this.architecture
     );
 
+    // Confirm if the directory is saved in the tool cache
+    if (fs.existsSync(javaPath)) {
+      core.debug(`Java is successfully cached at: ${javaPath}`);
+    } else {
+      core.debug(`Failed to cache Java at: ${javaPath}`);
+    }
+    
     return {version: javaRelease.version, path: javaPath};
   }
 
