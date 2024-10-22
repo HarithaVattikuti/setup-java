@@ -74,6 +74,13 @@ export class CorrettoDistribution extends JavaBase {
       throw new Error('Only major versions are supported');
     }
     const availableVersions = await this.getAvailableVersions();
+    core.debug(`all Available versions - ${availableVersions}`)
+    
+    availableVersions.forEach(item => {
+      core.debug(`each version- ${item.version} corretto version - ${item.correttoVersion} download link - ${item.downloadLink} `);
+      core.debug(`version converted to semver - ${convertVersionToSemver(item.correttoVersion)}`);
+    });
+
     const matchingVersions = availableVersions
       .filter(item => item.version == version)
       .map(item => {
