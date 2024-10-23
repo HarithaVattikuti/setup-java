@@ -53,6 +53,9 @@ export abstract class JavaBase {
       core.info('Trying to resolve the latest version from remote');
       const javaRelease = await this.findPackageForDownload(this.version);
       core.info(`Resolved latest version as ${javaRelease.version}`);
+      const c = semver.clean(javaRelease.version) || ''
+      core.debug(`print isexplicit value : ${c}`)
+
       if (foundJava?.version === javaRelease.version) {
         core.info(`Resolved Java ${foundJava.version} from tool-cache`);
       } else {
@@ -103,7 +106,7 @@ export abstract class JavaBase {
     const testversion = tc.find(this.toolcacheFolderName,this.version, this.architecture);
     core.debug(`All test versions in toolcache ${testversion}`);
 
-
+    
     const allversions = tc.findAllVersions(this.toolcacheFolderName, this.architecture);
     const onlyjavavers=tc.findAllVersions('Java_Corretto_jdk');
 
