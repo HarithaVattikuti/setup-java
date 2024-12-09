@@ -143,7 +143,10 @@ jobs:
         if: matrix.os == 'ubuntu-24.04'
         run: |
            echo ""Installing SBT...""
-           sudo apt-get update && sudo apt-get install -y sbt
+           echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | sudo tee /etc/apt/sources.list.d/sbt.list
+           curl -fsL https://repo.scala-sbt.org/scalasbt/debian/sbt-apt-key.gpg | sudo apt-key add -
+           sudo apt-get update
+           sudo apt-get install -y sbt
 
       - name: Create files to cache
         run: sbt update
