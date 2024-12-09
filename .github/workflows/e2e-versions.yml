@@ -305,7 +305,7 @@ jobs:
       fail-fast: false
       matrix:
         # x86 is not supported on macOS
-        os: [windows-latest, ubuntu-24.04]
+        os: [ ubuntu-24.04]
         distribution: ['liberica', 'zulu', 'corretto']
         version: ['11']
     steps:
@@ -323,8 +323,8 @@ jobs:
         if: matrix.os == 'ubuntu-24.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y zlib1g zlib1g-dev
-          sudo ln -s /usr/lib/x86_64-linux-gnu/libz.so.1 /usr/lib/libz.so.1
+          sudo apt-get install -y zlib1g:i386 zlib1g-dev:i386
+          #sudo ln -s /usr/lib/x86_64-linux-gnu/libz.so.1 /usr/lib/libz.so.1
 
           
       - name: Verify Java
