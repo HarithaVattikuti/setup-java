@@ -144,7 +144,7 @@ jobs:
         run: |
            echo ""Installing SBT...""
            echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | sudo tee /etc/apt/sources.list.d/sbt.list
-           curl -fsL https://repo.scala-sbt.org/scalasbt/debian/sbt-apt-key.gpg | sudo apt-key add -
+           curl -fsL https://repo.scala-sbt.org/scalasbt/debian/sbt-apt-key.gpg | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/sbt.gpg > /dev/null
            sudo apt-get update
            sudo apt-get install -y sbt
 
