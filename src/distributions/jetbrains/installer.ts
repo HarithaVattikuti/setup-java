@@ -213,6 +213,8 @@ export class JetBrainsDistribution extends JavaBase {
     if (core.isDebug()) {
       core.startGroup('Print information about available versions');
       console.timeEnd('Retrieving available versions for JBR took'); // eslint-disable-line no-console
+      core.debug("raw versions");
+      core.debug(rawVersions.map(item => item.tag_name).join(', '));  
       core.debug(`Available versions: [${versions.length}]`);
       core.debug(versions.map(item => item.semver).join(', '));
       core.endGroup();
