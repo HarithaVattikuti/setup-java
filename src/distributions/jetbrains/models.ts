@@ -3,6 +3,7 @@
 export interface IJetBrainsRawVersion {
   tag_name: string;
   name: string;
+  prerelease: boolean;
 }
 
 export interface IJetBrainsVersion {
