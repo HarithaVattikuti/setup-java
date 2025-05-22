@@ -216,7 +216,7 @@ export class JetBrainsDistribution extends JavaBase {
       core.debug("raw versions");
       core.debug(rawVersions.map(item => item.tag_name).join(', '));  
       core.debug(`Available versions: [${versions.length}]`);
-      core.debug(versions.map(item => item.semver).join(', '));
+      core.debug(versions.map(item => item.tag_name).join(', '));
       core.endGroup();
     }
 
