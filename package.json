@@ -59,5 +59,8 @@
   "bugs": {
     "url": "https://github.com/actions/setup-java/issues"
   },
+  "overrides": {
+    "uri-js": "npm:uri-js-replace"
+  },
   "homepage": "https://github.com/actions/setup-java#readme"
 }

@@ -94148,15 +94148,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -94231,79 +94222,73 @@ function findPackageManager(id) {
  * Format of the generated key will be "${{ platform }}-${{ id }}-${{ fileHash }}"".
  * @see {@link https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows#matching-a-cache-key|spec of cache key}
  */
-function computeCacheKey(packageManager, cacheDependencyPath) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const pattern = cacheDependencyPath
-            ? cacheDependencyPath.trim().split('\n')
-            : packageManager.pattern;
-        const fileHash = yield glob.hashFiles(pattern.join('\n'));
-        if (!fileHash) {
-            throw new Error(`No file in ${process.cwd()} matched to [${pattern}], make sure you have checked out the target repository`);
-        }
-        return `${CACHE_KEY_PREFIX}-${process.env['RUNNER_OS']}-${process.arch}-${packageManager.id}-${fileHash}`;
-    });
+async function computeCacheKey(packageManager, cacheDependencyPath) {
+    const pattern = cacheDependencyPath
+        ? cacheDependencyPath.trim().split('\n')
+        : packageManager.pattern;
+    const fileHash = await glob.hashFiles(pattern.join('\n'));
+    if (!fileHash) {
+        throw new Error(`No file in ${process.cwd()} matched to [${pattern}], make sure you have checked out the target repository`);
+    }
+    return `${CACHE_KEY_PREFIX}-${process.env['RUNNER_OS']}-${process.arch}-${packageManager.id}-${fileHash}`;
 }
 /**
  * Restore the dependency cache
  * @param id ID of the package manager, should be "maven" or "gradle"
  * @param cacheDependencyPath The path to a dependency file
  */
-function restore(id, cacheDependencyPath) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const packageManager = findPackageManager(id);
-        const primaryKey = yield computeCacheKey(packageManager, cacheDependencyPath);
-        core.debug(`primary key is ${primaryKey}`);
-        core.saveState(STATE_CACHE_PRIMARY_KEY, primaryKey);
-        // No "restoreKeys" is set, to start with a clear cache after dependency update (see https://github.com/actions/setup-java/issues/269)
-        const matchedKey = yield cache.restoreCache(packageManager.path, primaryKey);
-        if (matchedKey) {
-            core.saveState(CACHE_MATCHED_KEY, matchedKey);
-            core.setOutput('cache-hit', matchedKey === primaryKey);
-            core.info(`Cache restored from key: ${matchedKey}`);
-        }
-        else {
-            core.setOutput('cache-hit', false);
-            core.info(`${packageManager.id} cache is not found`);
-        }
-    });
+async function restore(id, cacheDependencyPath) {
+    const packageManager = findPackageManager(id);
+    const primaryKey = await computeCacheKey(packageManager, cacheDependencyPath);
+    core.debug(`primary key is ${primaryKey}`);
+    core.saveState(STATE_CACHE_PRIMARY_KEY, primaryKey);
+    // No "restoreKeys" is set, to start with a clear cache after dependency update (see https://github.com/actions/setup-java/issues/269)
+    const matchedKey = await cache.restoreCache(packageManager.path, primaryKey);
+    if (matchedKey) {
+        core.saveState(CACHE_MATCHED_KEY, matchedKey);
+        core.setOutput('cache-hit', matchedKey === primaryKey);
+        core.info(`Cache restored from key: ${matchedKey}`);
+    }
+    else {
+        core.setOutput('cache-hit', false);
+        core.info(`${packageManager.id} cache is not found`);
+    }
 }
 exports.restore = restore;
 /**
  * Save the dependency cache
  * @param id ID of the package manager, should be "maven" or "gradle"
  */
-function save(id) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const packageManager = findPackageManager(id);
-        const matchedKey = core.getState(CACHE_MATCHED_KEY);
-        // Inputs are re-evaluated before the post action, so we want the original key used for restore
-        const primaryKey = core.getState(STATE_CACHE_PRIMARY_KEY);
-        if (!primaryKey) {
-            core.warning('Error retrieving key from state.');
-            return;
+async function save(id) {
+    const packageManager = findPackageManager(id);
+    const matchedKey = core.getState(CACHE_MATCHED_KEY);
+    // Inputs are re-evaluated before the post action, so we want the original key used for restore
+    const primaryKey = core.getState(STATE_CACHE_PRIMARY_KEY);
+    if (!primaryKey) {
+        core.warning('Error retrieving key from state.');
+        return;
+    }
+    else if (matchedKey === primaryKey) {
+        // no change in target directories
+        core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
+        return;
+    }
+    try {
+        await cache.saveCache(packageManager.path, primaryKey);
+        core.info(`Cache saved with the key: ${primaryKey}`);
+    }
+    catch (error) {
+        const err = error;
+        if (err.name === cache.ReserveCacheError.name) {
+            core.info(err.message);
         }
-        else if (matchedKey === primaryKey) {
-            // no change in target directories
-            core.info(`Cache hit occurred on the primary key ${primaryKey}, not saving cache.`);
-            return;
-        }
-        try {
-            yield cache.saveCache(packageManager.path, primaryKey);
-            core.info(`Cache saved with the key: ${primaryKey}`);
-        }
-        catch (error) {
-            const err = error;
-            if (err.name === cache.ReserveCacheError.name) {
-                core.info(err.message);
+        else {
+            if (isProbablyGradleDaemonProblem(packageManager, err)) {
+                core.warning('Failed to save Gradle cache on Windows. If tar.exe reported "Permission denied", try to run Gradle with `--no-daemon` option. Refer to https://github.com/actions/cache/issues/454 for details.');
             }
-            else {
-                if (isProbablyGradleDaemonProblem(packageManager, err)) {
-                    core.warning('Failed to save Gradle cache on Windows. If tar.exe reported "Permission denied", try to run Gradle with `--no-daemon` option. Refer to https://github.com/actions/cache/issues/454 for details.');
-                }
-                throw error;
-            }
+            throw error;
         }
-    });
+    }
 }
 exports.save = save;
 /**
@@ -94352,15 +94337,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = void 0;
 const core = __importStar(__nccwpck_require__(2186));
@@ -94368,30 +94344,26 @@ const gpg = __importStar(__nccwpck_require__(3759));
 const constants = __importStar(__nccwpck_require__(9042));
 const util_1 = __nccwpck_require__(2629);
 const cache_1 = __nccwpck_require__(4810);
-function removePrivateKeyFromKeychain() {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (core.getInput(constants.INPUT_GPG_PRIVATE_KEY, { required: false })) {
-            core.info('Removing private key from keychain');
-            try {
-                const keyFingerprint = core.getState(constants.STATE_GPG_PRIVATE_KEY_FINGERPRINT);
-                yield gpg.deleteKey(keyFingerprint);
-            }
-            catch (error) {
-                core.setFailed(`Failed to remove private key due to: ${error.message}`);
-            }
+async function removePrivateKeyFromKeychain() {
+    if (core.getInput(constants.INPUT_GPG_PRIVATE_KEY, { required: false })) {
+        core.info('Removing private key from keychain');
+        try {
+            const keyFingerprint = core.getState(constants.STATE_GPG_PRIVATE_KEY_FINGERPRINT);
+            await gpg.deleteKey(keyFingerprint);
         }
-    });
+        catch (error) {
+            core.setFailed(`Failed to remove private key due to: ${error.message}`);
+        }
+    }
 }
 /**
  * Check given input and run a save process for the specified package manager
  * @returns Promise that will be resolved when the save process finishes
  */
-function saveCache() {
-    return __awaiter(this, void 0, void 0, function* () {
-        const jobStatus = (0, util_1.isJobStatusSuccess)();
-        const cache = core.getInput(constants.INPUT_CACHE);
-        return jobStatus && cache ? (0, cache_1.save)(cache) : Promise.resolve();
-    });
+async function saveCache() {
+    const jobStatus = (0, util_1.isJobStatusSuccess)();
+    const cache = core.getInput(constants.INPUT_CACHE);
+    return jobStatus && cache ? (0, cache_1.save)(cache) : Promise.resolve();
 }
 /**
  * The save process is best-effort, and it should not make the workflow fail
@@ -94399,23 +94371,19 @@ function saveCache() {
  * @param promise the promise to ignore error from
  * @returns Promise that will ignore error reported by the given promise
  */
-function ignoreError(promise) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return new Promise(resolve => {
-            promise
-                .catch(error => {
-                core.warning(error);
-                resolve(void 0);
-            })
-                .then(resolve);
-        });
+async function ignoreError(promise) {
+    return new Promise(resolve => {
+        promise
+            .catch(error => {
+            core.warning(error);
+            resolve(void 0);
+        })
+            .then(resolve);
     });
 }
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        yield removePrivateKeyFromKeychain();
-        yield ignoreError(saveCache());
-    });
+async function run() {
+    await removePrivateKeyFromKeychain();
+    await ignoreError(saveCache());
 }
 exports.run = run;
 if (require.main === require.cache[eval('__filename')]) {
@@ -94495,15 +94463,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.deleteKey = exports.importKey = exports.PRIVATE_KEY_FILE = void 0;
 const fs = __importStar(__nccwpck_require__(7147));
@@ -94513,39 +94472,35 @@ const exec = __importStar(__nccwpck_require__(1514));
 const util = __importStar(__nccwpck_require__(2629));
 exports.PRIVATE_KEY_FILE = path.join(util.getTempDir(), 'private-key.asc');
 const PRIVATE_KEY_FINGERPRINT_REGEX = /\w{40}/;
-function importKey(privateKey) {
-    return __awaiter(this, void 0, void 0, function* () {
-        fs.writeFileSync(exports.PRIVATE_KEY_FILE, privateKey, {
-            encoding: 'utf-8',
-            flag: 'w'
-        });
-        let output = '';
-        const options = {
-            silent: true,
-            listeners: {
-                stdout: (data) => {
-                    output += data.toString();
-                }
-            }
-        };
-        yield exec.exec('gpg', [
-            '--batch',
-            '--import-options',
-            'import-show',
-            '--import',
-            exports.PRIVATE_KEY_FILE
-        ], options);
-        yield io.rmRF(exports.PRIVATE_KEY_FILE);
-        const match = output.match(PRIVATE_KEY_FINGERPRINT_REGEX);
-        return match && match[0];
+async function importKey(privateKey) {
+    fs.writeFileSync(exports.PRIVATE_KEY_FILE, privateKey, {
+        encoding: 'utf-8',
+        flag: 'w'
     });
+    let output = '';
+    const options = {
+        silent: true,
+        listeners: {
+            stdout: (data) => {
+                output += data.toString();
+            }
+        }
+    };
+    await exec.exec('gpg', [
+        '--batch',
+        '--import-options',
+        'import-show',
+        '--import',
+        exports.PRIVATE_KEY_FILE
+    ], options);
+    await io.rmRF(exports.PRIVATE_KEY_FILE);
+    const match = output.match(PRIVATE_KEY_FINGERPRINT_REGEX);
+    return match && match[0];
 }
 exports.importKey = importKey;
-function deleteKey(keyFingerprint) {
-    return __awaiter(this, void 0, void 0, function* () {
-        yield exec.exec('gpg', ['--batch', '--yes', '--delete-secret-and-public-key', keyFingerprint], {
-            silent: true
-        });
+async function deleteKey(keyFingerprint) {
+    await exec.exec('gpg', ['--batch', '--yes', '--delete-secret-and-public-key', keyFingerprint], {
+        silent: true
     });
 }
 exports.deleteKey = deleteKey;
@@ -94581,15 +94536,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -94619,26 +94565,24 @@ function getVersionFromToolcachePath(toolPath) {
     return toolPath;
 }
 exports.getVersionFromToolcachePath = getVersionFromToolcachePath;
-function extractJdkFile(toolPath, extension) {
-    return __awaiter(this, void 0, void 0, function* () {
-        if (!extension) {
-            extension = toolPath.endsWith('.tar.gz')
-                ? 'tar.gz'
-                : path_1.default.extname(toolPath);
-            if (extension.startsWith('.')) {
-                extension = extension.substring(1);
-            }
+async function extractJdkFile(toolPath, extension) {
+    if (!extension) {
+        extension = toolPath.endsWith('.tar.gz')
+            ? 'tar.gz'
+            : path_1.default.extname(toolPath);
+        if (extension.startsWith('.')) {
+            extension = extension.substring(1);
         }
-        switch (extension) {
-            case 'tar.gz':
-            case 'tar':
-                return yield tc.extractTar(toolPath);
-            case 'zip':
-                return yield tc.extractZip(toolPath);
-            default:
-                return yield tc.extract7z(toolPath);
-        }
-    });
+    }
+    switch (extension) {
+        case 'tar.gz':
+        case 'tar':
+            return await tc.extractTar(toolPath);
+        case 'zip':
+            return await tc.extractZip(toolPath);
+        default:
+            return await tc.extract7z(toolPath);
+    }
 }
 exports.extractJdkFile = extractJdkFile;
 function getDownloadArchiveExtension() {
@@ -94646,13 +94590,12 @@ function getDownloadArchiveExtension() {
 }
 exports.getDownloadArchiveExtension = getDownloadArchiveExtension;
 function isVersionSatisfies(range, version) {
-    var _a;
     if (semver.valid(range)) {
         // if full version with build digit is provided as a range (such as '1.2.3+4')
         // we should check for exact equal via compareBuild
         // since semver.satisfies doesn't handle 4th digit
         const semRange = semver.parse(range);
-        if (semRange && ((_a = semRange.build) === null || _a === void 0 ? void 0 : _a.length) > 0) {
+        if (semRange && semRange.build?.length > 0) {
             return semver.compareBuild(range, version) === 0;
         }
     }
@@ -94660,8 +94603,7 @@ function isVersionSatisfies(range, version) {
 }
 exports.isVersionSatisfies = isVersionSatisfies;
 function getToolcachePath(toolName, version, architecture) {
-    var _a;
-    const toolcacheRoot = (_a = process.env['RUNNER_TOOL_CACHE']) !== null && _a !== void 0 ? _a : '';
+    const toolcacheRoot = process.env['RUNNER_TOOL_CACHE'] ?? '';
     const fullPath = path_1.default.join(toolcacheRoot, toolName, version, architecture);
     if (fs.existsSync(fullPath)) {
         return fullPath;
@@ -94696,7 +94638,6 @@ function isCacheFeatureAvailable() {
 }
 exports.isCacheFeatureAvailable = isCacheFeatureAvailable;
 function getVersionFromFileContent(content, distributionName, versionFile) {
-    var _a, _b, _c, _d, _e;
     let javaVersionRegExp;
     function getFileName(versionFile) {
         return path_1.default.basename(versionFile);
@@ -94709,8 +94650,8 @@ function getVersionFromFileContent(content, distributionName, versionFile) {
     else {
         javaVersionRegExp = /(?<version>(?<=(^|\s|-))(\d+\S*))(\s|$)/;
     }
-    const fileContent = ((_b = (_a = content.match(javaVersionRegExp)) === null || _a === void 0 ? void 0 : _a.groups) === null || _b === void 0 ? void 0 : _b.version)
-        ? (_d = (_c = content.match(javaVersionRegExp)) === null || _c === void 0 ? void 0 : _c.groups) === null || _d === void 0 ? void 0 : _d.version
+    const fileContent = content.match(javaVersionRegExp)?.groups?.version
+        ? content.match(javaVersionRegExp)?.groups?.version
         : '';
     if (!fileContent) {
         return null;
@@ -94726,7 +94667,7 @@ function getVersionFromFileContent(content, distributionName, versionFile) {
         return null;
     }
     if (constants_1.DISTRIBUTIONS_ONLY_MAJOR_VERSION.includes(distributionName)) {
-        const coerceVersion = (_e = semver.coerce(version)) !== null && _e !== void 0 ? _e : version;
+        const coerceVersion = semver.coerce(version) ?? version;
         version = semver.major(coerceVersion).toString();
     }
     return version.toString();
