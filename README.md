@@ -18,10 +18,19 @@ The `setup-java` action provides the following functionality for GitHub Actions 
 
 This action allows you to work with Java and Scala projects.
 
+## Breaking changes in V5
+
+- Upgraded action from node20 to node24
+  > Make sure your runner is on version v2.327.1 or later to ensure compatibility with this release [Release Notes](https://github.com/actions/runner/releases/tag/v2.327.1)
+
+For more details,  see the full release notes on the [releases page](https://github.com/actions/setup-java/releases/tag/v5.0.0)
+
 ## V2 vs V1
 
 - V2 supports custom distributions and provides support for Azul Zulu OpenJDK, Eclipse Temurin and AdoptOpenJDK  out of the box. V1 supports only Azul Zulu OpenJDK.
 - V2 requires you to specify distribution along with the version. V1 defaults to Azul Zulu OpenJDK, only version input is required. Follow [the migration guide](docs/switching-to-v2.md) to switch from V1 to V2.
+
+For information about the latest releases, recent updates, and newly supported distributions, please refer to the `setup-java` [Releases](https://github.com/actions/setup-java/releases).
 
 ## Usage
 
@@ -69,8 +78,8 @@ This action allows you to work with Java and Scala projects.
 #### Eclipse Temurin
 ```yaml
 steps:
-- uses: actions/checkout@v4
-- uses: actions/setup-java@v4
+- uses: actions/checkout@v5
+- uses: actions/setup-java@v5
   with:
     distribution: 'temurin' # See 'Supported distributions' for available options
     java-version: '21'
@@ -80,8 +89,8 @@ steps:
 #### Azul Zulu OpenJDK
 ```yaml
 steps:
-- uses: actions/checkout@v4
-- uses: actions/setup-java@v4
+- uses: actions/checkout@v5
+- uses: actions/setup-java@v5
   with:
     distribution: 'zulu' # See 'Supported distributions' for available options
     java-version: '21'
@@ -136,8 +145,8 @@ The cache input is optional, and caching is turned off by default.
 #### Caching gradle dependencies
 ```yaml
 steps:
-- uses: actions/checkout@v4
-- uses: actions/setup-java@v4
+- uses: actions/checkout@v5
+- uses: actions/setup-java@v5
   with:
     distribution: 'temurin'
     java-version: '21'
@@ -151,8 +160,8 @@ steps:
 #### Caching maven dependencies
 ```yaml
 steps:
-- uses: actions/checkout@v4
-- uses: actions/setup-java@v4
+- uses: actions/checkout@v5
+- uses: actions/setup-java@v5
   with:
     distribution: 'temurin'
     java-version: '21'
@@ -165,8 +174,8 @@ steps:
 #### Caching sbt dependencies
 ```yaml
 steps:
-- uses: actions/checkout@v4
-- uses: actions/setup-java@v4
+- uses: actions/checkout@v5
+- uses: actions/setup-java@v5
   with:
     distribution: 'temurin'
     java-version: '21'
@@ -185,8 +194,8 @@ Usually, cache gets downloaded in multiple segments of fixed sizes. Sometimes, a
 env:
   SEGMENT_DOWNLOAD_TIMEOUT_MINS: '5'
 steps:
-- uses: actions/checkout@v4
-- uses: actions/setup-java@v4
+- uses: actions/checkout@v5
+- uses: actions/setup-java@v5
   with:
     distribution: 'temurin'
     java-version: '21'
@@ -205,8 +214,8 @@ For Java distributions that are not cached on Hosted images, `check-latest` alwa
 
 ```yaml
 steps:
-- uses: actions/checkout@v4
-- uses: actions/setup-java@v4
+- uses: actions/checkout@v5
+- uses: actions/setup-java@v5
   with:
     distribution: 'temurin'
     java-version: '21'
@@ -224,9 +233,9 @@ jobs:
         java: [ '8', '11', '17', '21' ]
     name: Java ${{ matrix.Java }} sample
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setup java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: '<distribution>'
           java-version: ${{ matrix.java }}
@@ -235,11 +244,11 @@ jobs:
 
 ### Install multiple JDKs
 
-All versions are added to the PATH. The last version will be used and available globally. Other Java versions can be accessed through env variables with such specification as 'JAVA_HOME_{{ MAJOR_VERSION }}_{{ ARCHITECTURE }}'.
+All configured Java versions are added to the PATH. The last one added to the PATH (i.e., the last JDK set up by this action) will be used as the default and available globally. Other Java versions can be accessed through environment variables such as 'JAVA_HOME_{{ MAJOR_VERSION }}_{{ ARCHITECTURE }}'. To use a specific Java version, set the JAVA_HOME environment variable accordingly and prepend its bin directory to the PATH to ensure it takes priority during execution.
 
 ```yaml
     steps:
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: '<distribution>'
           java-version: |
