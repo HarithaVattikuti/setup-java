@@ -56,6 +56,9 @@
     "ts-jest": "^29.3.0",
     "typescript": "^5.3.3"
   },
+  "overrides": {
+    "picomatch": "^4.0.4"
+  },
   "bugs": {
     "url": "https://github.com/actions/setup-java/issues"
   },
