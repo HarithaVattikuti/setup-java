@@ -9,6 +9,7 @@ allowed:
   - isc
   - mit
   - cc0-1.0
+  - python-2.0
   - unlicense
 
 reviewed:
